@@ -1,44 +1,51 @@
 package main.scala
 
 import akka.actor.ActorSystem
+import akka.event.Logging
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.Directives._
-import akka.stream.ActorMaterializer
-import controllers.ApiController
-import core.json.ItemJsonProtocol
-import spray.json._
+import akka.http.scaladsl.Http.ServerBinding
+import akka.util.Timeout
+import com.typesafe.config.{Config, ConfigFactory}
 
-object Module extends App with ItemJsonProtocol {
+import scala.concurrent.Future
+
+object Module extends App with RequestTimeout {
 
   implicit val system = ActorSystem("SimpleScalaApi")
-  implicit val materialier = ActorMaterializer
 
-  import system.dispatcher
+  val config = ConfigFactory.load
+  val host = config.getString("http.host")
+  val port = config.getInt("http.port")
 
-  val apiServerRoute =
-    (pathPrefix("api") & get) {
-      path("items") {
-        parameter(Symbol("customerId").as[Int]) { customerId =>
-          complete(
-            ApiController
-              .getItems(customerId)
-              .map(x => x.toJson.prettyPrint)
-              .map(toHttpEntity)
-          )
-        }
-      } ~ pathEndOrSingleSlash {
-        val msg = "FIRST PAGE. Nothing to be seen here"
-        complete(
-          HttpEntity(
-            ContentTypes.`text/html(UTF-8)`,
-            msg
-          )
-        )
-      }
+  val api = new RestApi(requestTimeout(config)).routes
+
+  val bindingFuture: Future[ServerBinding] = Http().bindAndHandle(api, host, port)
+
+  val log = Logging(system.eventStream, "Scala Akka Api")
+
+  import scala.concurrent.ExecutionContext.Implicits.global
+
+  try {
+    // Here we start the HTTP server and log the info
+    bindingFuture.map { serverBinding =>
+      log.info(s"Scala Akka Api bound to ${serverBinding.localAddress}")
     }
+  }
+  catch {
+    // If the HTTP server fails to start, we throw an Exception and log the error and close the system
+    case ex: Exception =>
+      log.error(ex, "Failed to bind to {}:{}!", host, port)
+      system.terminate()
+  }
+}
 
-  def toHttpEntity(payload: String) = HttpEntity(ContentTypes.`application/json`, payload)
+trait RequestTimeout {
 
-  Http().bindAndHandle(apiServerRoute, "localhost", 9003)
+  import scala.concurrent.duration._
+
+  def requestTimeout(config: Config): Timeout = {
+    val t = config.getString("akka.http.server.request-timeout")
+    val d = Duration(t)
+    FiniteDuration(d.length, d.unit)
+  }
 }
