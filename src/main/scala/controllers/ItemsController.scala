@@ -2,9 +2,6 @@ package main.scala.controllers
 
 import main.scala.services.ItemsService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-
 object ItemsController {
   val itemsService = new ItemsService
 

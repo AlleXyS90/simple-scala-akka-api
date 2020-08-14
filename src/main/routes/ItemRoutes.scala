@@ -1,48 +1,53 @@
 package main.routes
 
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
 import akka.http.scaladsl.server.Directives.{complete, get, parameter, pathPrefix, _}
-import akka.http.scaladsl.server.{ExceptionHandler, Route}
-import core.json.ItemJsonProtocol
+import com.typesafe.config.ConfigFactory
+import main.scala.helpers.JsonProtocols.ItemJsonProtocol
 import main.scala.controllers.ItemsController
+import main.scala.helpers.{RoutesExceptionHandler, RoutesRejectionHandler}
 import spray.json._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ItemRoutes extends ItemJsonProtocol {
-  protected val getItemsRoute: Route = {
-    (pathPrefix("api" / "items") & get) {
-      complete(
-        ItemsController
-          .getAll
-          .map(x => x.toJson.prettyPrint)
-          .map(toHttpEntity)
-      )
-    }
-  }
+class ItemRoutes extends ItemJsonProtocol with RoutesExceptionHandler with RoutesRejectionHandler {
+  val apiToken = ConfigFactory.load.getString("api.token")
 
-  protected val getItemRoute: Route = rejectEmptyResponse {
-    (pathPrefix("api" / "items") & get) {
-      parameter(Symbol("id").as[Int]) { id =>
-        complete {
-          ItemsController.getById(id) map { result =>
-            result match {
-              case Some(value) => toHttpEntity(value.toJson.prettyPrint)
-              case None => throw new NoSuchElementException(s"Item with id $id not found")
-            }
+  val getItemRoute = parameter(Symbol("id").as[Int]) { id =>
+    complete {
+      ItemsController.getById(id) map {
+        result =>
+          result match {
+            case Some(value) => toHttpEntity(value.toJson.prettyPrint)
+            case None => throw new NoSuchElementException(s"Item with id $id not found")
           }
-        }
       }
     }
   }
 
-  val noSuchElementExceptionHandler: ExceptionHandler = ExceptionHandler {
-    case e: NoSuchElementException => complete(StatusCodes.NotFound, e.getMessage)
+  val concatRoutes = (pathPrefix("api" / "items") & get & extractRequest) { request =>
+    val tokenResult = request.headers.find(x => x.name() == "Token")
+    tokenResult match {
+      case None => throw new IllegalArgumentException("Unauthorized. Token not found.")
+      case Some(token) => token.value match {
+        case this.apiToken => getItemRoute ~
+          pathEndOrSingleSlash {
+            complete(
+              ItemsController.getAll
+                .map(x => x.toJson.prettyPrint)
+                .map(toHttpEntity)
+            )
+          }
+        case _ => throw new IllegalArgumentException("Unauthorized. Invalid token.")
+      }
+    }
   }
 
-  val itemRoutes = handleExceptions(noSuchElementExceptionHandler) {
-    getItemRoute ~
-      getItemRoute
+  val itemRoutes = (
+      handleRejections(forbiddenHandler) &
+      handleExceptions(noSuchElementExceptionHandler) &
+      handleExceptions(tokenNotFoundExceptionHandler)) {
+    concatRoutes
   }
 
   private def toHttpEntity(payload: String) = HttpEntity(ContentTypes.`application/json`, payload)
