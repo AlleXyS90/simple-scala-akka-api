@@ -3,8 +3,8 @@ package main.routes
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
 import akka.http.scaladsl.server.Directives.{complete, get, parameter, pathPrefix, _}
 import com.typesafe.config.ConfigFactory
-import main.scala.helpers.JsonProtocols.ItemJsonProtocol
 import main.scala.controllers.ItemsController
+import main.scala.helpers.JsonProtocols.ItemJsonProtocol
 import main.scala.helpers.{RoutesExceptionHandler, RoutesRejectionHandler}
 import spray.json._
 
@@ -26,6 +26,8 @@ class ItemRoutes extends ItemJsonProtocol with RoutesExceptionHandler with Route
   }
 
   val concatRoutes = (pathPrefix("api" / "items") & get & extractRequest) { request =>
+    // items route
+    // get item by id (with parameter), getAll as default route (pathEndOrSingleSlash directive)
     val tokenResult = request.headers.find(x => x.name() == "Token")
     tokenResult match {
       case None => throw new IllegalArgumentException("Unauthorized. Token not found.")
@@ -34,7 +36,7 @@ class ItemRoutes extends ItemJsonProtocol with RoutesExceptionHandler with Route
           pathEndOrSingleSlash {
             complete(
               ItemsController.getAll
-                .map(x => x.toJson.prettyPrint)
+                .map(_.toJson.prettyPrint)
                 .map(toHttpEntity)
             )
           }
@@ -44,7 +46,6 @@ class ItemRoutes extends ItemJsonProtocol with RoutesExceptionHandler with Route
   }
 
   val itemRoutes = (
-      handleRejections(forbiddenHandler) &
       handleExceptions(noSuchElementExceptionHandler) &
       handleExceptions(tokenNotFoundExceptionHandler)) {
     concatRoutes

@@ -1,7 +1,7 @@
 package main.routes
 
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
-import akka.http.scaladsl.server.Directives.{complete, path, pathEndOrSingleSlash, _}
+import akka.http.scaladsl.server.Directives.{complete, pathEndOrSingleSlash, _}
 import akka.http.scaladsl.server.Route
 import com.typesafe.config.ConfigFactory
 
@@ -16,7 +16,7 @@ trait ApiRoutes {
   val itemRoutes = new ItemRoutes().itemRoutes
 
   protected val getDefaultRoute: Route = {
-    path("api") {
+    pathPrefix("api") {
       val msg = "Rest API FIRST PAGE. Nothing to be seen here"
       complete(
         HttpEntity(
@@ -25,13 +25,14 @@ trait ApiRoutes {
         )
       )
     }
+
   }
 
   protected val allRoutes =
     itemRoutes ~
-      getDefaultRoute ~
-      pathEndOrSingleSlash {
-        redirect("/api", StatusCodes.PermanentRedirect)
-      }
+    getDefaultRoute ~
+    pathEndOrSingleSlash {
+      redirect("/api", StatusCodes.PermanentRedirect)
+    }
 }
 
