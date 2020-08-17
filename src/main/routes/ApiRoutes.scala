@@ -1,4 +1,4 @@
-package main.routes
+package app.routes
 
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Directives.{complete, pathEndOrSingleSlash, _}
@@ -12,7 +12,7 @@ trait ApiRoutes {
 
   lazy val routes: Route = allRoutes
 
-  // entity routes
+  // entity main.routes
   val itemRoutes = new ItemRoutes().itemRoutes
 
   protected val getDefaultRoute: Route = {

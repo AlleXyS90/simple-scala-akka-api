@@ -1,8 +1,8 @@
-package main.scala
+package app
 
 import akka.actor.ActorSystem
 import akka.util.Timeout
-import main.routes.ApiRoutes
+import app.routes.ApiRoutes
 
 import scala.concurrent.ExecutionContextExecutor
 

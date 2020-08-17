@@ -1,4 +1,4 @@
-package main.scala.dtos
+package app.dtos
 
 case class Item(id: Int,
                 name: String,

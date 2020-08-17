@@ -1,6 +1,6 @@
-package main.scala.helpers
+package app.helpers
 
-import main.scala.dtos.Item
+import app.dtos.Item
 import spray.json.DefaultJsonProtocol
 
 object JsonProtocols {

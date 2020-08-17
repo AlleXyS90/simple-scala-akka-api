@@ -1,7 +1,7 @@
-package main.scala.services
+package app.services
 
-import main.scala.dtos.Item
-import services.interfaces.IItemsService
+import app.dtos.Item
+import app.services.interfaces.IItemsService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

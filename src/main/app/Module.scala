@@ -1,4 +1,4 @@
-package main.scala
+package app
 
 import akka.actor.ActorSystem
 import akka.event.Logging

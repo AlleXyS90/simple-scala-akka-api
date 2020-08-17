@@ -1,6 +1,6 @@
-package services.interfaces
+package app.services.interfaces
 
-import main.scala.dtos.Item
+import app.dtos.Item
 
 import scala.concurrent.Future
 

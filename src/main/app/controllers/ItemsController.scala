@@ -1,6 +1,6 @@
-package main.scala.controllers
+package app.controllers
 
-import main.scala.services.ItemsService
+import app.services.ItemsService
 
 object ItemsController {
   val itemsService = new ItemsService

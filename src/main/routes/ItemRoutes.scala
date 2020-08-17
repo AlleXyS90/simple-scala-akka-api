@@ -1,11 +1,11 @@
-package main.routes
+package app.routes
 
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
 import akka.http.scaladsl.server.Directives.{complete, get, parameter, pathPrefix, _}
 import com.typesafe.config.ConfigFactory
-import main.scala.controllers.ItemsController
-import main.scala.helpers.JsonProtocols.ItemJsonProtocol
-import main.scala.helpers.{RoutesExceptionHandler, RoutesRejectionHandler}
+import app.controllers.ItemsController
+import app.helpers.JsonProtocols.ItemJsonProtocol
+import app.helpers.{RoutesExceptionHandler, RoutesRejectionHandler}
 import spray.json._
 
 import scala.concurrent.ExecutionContext.Implicits.global
